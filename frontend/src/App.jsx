@@ -41,13 +41,16 @@ const palette = ['#2f6655', '#bb6848', '#91a94a', '#566f88'];
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 function apiUrl(path) {
-  return `${apiBaseUrl}${path}`;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  if (!apiBaseUrl) return normalizedPath;
+  return `${apiBaseUrl}${normalizedPath}`;
 }
 
 function websocketUrl(path) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const base = new URL(apiBaseUrl || window.location.origin);
   base.protocol = base.protocol === 'https:' ? 'wss:' : 'ws:';
-  base.pathname = path;
+  base.pathname = `${base.pathname.replace(/\/$/, '')}${normalizedPath}`;
   base.search = '';
   return base.toString();
 }

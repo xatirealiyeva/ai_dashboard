@@ -23,13 +23,15 @@ from compiler import (
     load_models,
 )
 import domain_policy
+from database_runtime import ensure_database
 from test_multi_llm import clean_json_text
 from unit_retrieval import retrieve_units
 
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_PATH = os.getenv("DUCKDB_PATH", os.path.join(BASE_DIR, "deposit_real.duckdb"))
+DEFAULT_DATABASE_PATH = "/tmp/deposit_real.duckdb" if os.getenv("VERCEL") else os.path.join(BASE_DIR, "deposit_real.duckdb")
+DATABASE_PATH = os.getenv("DUCKDB_PATH", DEFAULT_DATABASE_PATH)
 LOGGER = logging.getLogger("query_trace")
 LOGGER.setLevel(logging.INFO)
 
@@ -305,6 +307,7 @@ def _execute_selected_unit(
     execute_started = time.perf_counter()
     _trace(request_id, "db.execute", f"started question_id={question_id} read_only=true")
     try:
+        ensure_database(DATABASE_PATH)
         with duckdb.connect(DATABASE_PATH, read_only=True) as connection:
             cursor = connection.execute(sql)
             columns = [description[0] for description in cursor.description]

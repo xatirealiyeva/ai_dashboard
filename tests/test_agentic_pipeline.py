@@ -1,4 +1,6 @@
 import io
+import base64
+import gzip
 import logging
 import os
 import unittest
@@ -8,6 +10,7 @@ from unittest.mock import patch
 import agentic_pipeline
 import domain_policy
 from compiler import apply_default_period, compile_query, load_metrics, load_models
+from database_runtime import decode_database_payload
 from unit_retrieval import load_unit_documents
 
 
@@ -167,6 +170,14 @@ class AgenticPipelineTests(unittest.TestCase):
                 unit,
                 model,
             )
+
+    def test_private_database_payload_decodes_existing_base64_gzip_format(self):
+        database_bytes = b"DUCK" + b"local-test-snapshot"
+        encoded_snapshot = base64.b64encode(gzip.compress(database_bytes))
+        with patch.dict(os.environ, {"DUCKDB_URL_BASE64": "true", "DUCKDB_URL_GZIP": "true"}):
+            decoded = decode_database_payload(encoded_snapshot, "https://private.example/snapshot.gz.b64")
+
+        self.assertEqual(decoded, database_bytes)
 
     def test_compact_filter_map_is_normalized_and_allowlisted(self):
         semantic_query = {

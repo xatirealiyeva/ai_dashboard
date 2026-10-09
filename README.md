@@ -113,18 +113,43 @@ Windows PowerShell execution policy `npm` skriptini bloklayarsa, eyni əmri `npm
 
 ## Vercel deployment
 
-Vercel konfiqurasiyası bu repository-dəki React/Vite frontend-i deploy edir. Backend üçün Render Blueprint-i (`render.yaml`) də əlavə olunub. Free Render planında persistent disk yoxdur, buna görə `render_bootstrap.py` DuckDB snapshot-ını Render Secret File-dan hər açılışda `/tmp` qovluğuna bərpa edir.
+Repository `vercel.json` ilə iki Vercel Service kimi qurulub:
 
-1. Lokal olaraq `python scripts/create_render_db_secret.py` əmri ilə `deposit_real.duckdb.gz.b64` faylını yaradın. Bu fayl `.gitignore`-dadır və GitHub-a göndərilmir.
-2. Render Dashboard-da **New + → Blueprint** seçin və GitHub repository-ni qoşun. `render.yaml` free FastAPI service-i yaradır.
-3. Render service-in **Environment → Secret Files** bölməsində `deposit_real.duckdb.gz.b64` adlı secret file yaradın; lokal yaradılmış faylın məzmununu ora yapışdırın. Secret file 1 MB limitindən kiçik olmalıdır.
-4. Render-in istədiyi `QWEN_OPENAI_API_KEY`, `QWEN_OPENAI_API_BASE_URL`, `QWEN_OPENAI_MODEL` və `FRONTEND_ORIGINS` dəyişənlərini daxil edin. `FRONTEND_ORIGINS`-ə Vercel production URL-ni əlavə edin.
-5. Service deploy bitdikdən sonra onun `https://...onrender.com` URL-ni kopyalayın.
-6. Vercel project settings-də `VITE_API_BASE_URL` dəyişənini həmin Render URL-i ilə təyin edin. Bu dəyər client bundle-a daxil olur; burada API açarı yazmayın.
-7. GitHub repository-ni Vercel-ə import edin. Repository-dəki `vercel.json` avtomatik olaraq `frontend/` qovluğunu build edir və `frontend/dist` nəticəsini yayımlayır.
-8. Vercel production URL yarandıqdan sonra onu backend-in `FRONTEND_ORIGINS` dəyərinə əlavə edib Render service-i redeploy edin.
+- `frontend`: `frontend/` qovluğundan Vite build edir və bütün browser səhifələrini təqdim edir.
+- `ai-dashboard-api`: `api:app` FastAPI entrypoint-ini işlədir. Yalnız `/health` və `/ws` public rewrites ilə açıqdır.
 
-Vercel Functions üçün WebSocket dəstəyi platformada yeni və runtime-dan asılıdır; mövcud FastAPI WebSocket backend-i üçün ayrıca persistent backend daha etibarlı seçimdir. Vite build-də public dəyişənlər `VITE_` prefiksi ilə verilməlidir. [Vercel-in Vite sənədləri](https://vercel.com/docs/frameworks/frontend/vite) və [Python Functions sənədləri](https://vercel.com/docs/functions/runtimes/python) əlavə məlumat verir.
+API açarları və verilənlər bazası frontend-ə ötürülmür. Vercel Project → Settings → Environment Variables bölməsində production/preview üçün server-side dəyişənləri yaradın:
+
+```env
+QWEN_OPENAI_API_KEY=...
+QWEN_OPENAI_API_BASE_URL=https://your-openai-compatible-endpoint/v1
+QWEN_OPENAI_MODEL=your-model-name
+DUCKDB_URL=https://private-object-storage.example/deposit_real.duckdb.gz
+DUCKDB_URL_TOKEN=optional-bearer-token
+DUCKDB_URL_GZIP=true
+DUCKDB_URL_BASE64=false
+AGENT_IO_LOGGING=false
+```
+
+`DUCKDB_URL` private object-storage download URL-si olmalıdır; repository-dəki `deposit_real.duckdb` və `deposit_real.duckdb.gz.b64` `.gitignore` səbəbilə GitHub-a push edilmir. Mövcud `.gz.b64` artefaktını istifadə etdikdə `DUCKDB_URL_GZIP=true` və `DUCKDB_URL_BASE64=true` seçin. `DUCKDB_URL_TOKEN` optional Bearer token-dir. DB ilk `/health` və ya sorğu zamanı function-ın `/tmp` qovluğuna endirilir. URL/token-u `VITE_` prefiksi ilə yaratmayın: həmin dəyişənlər browser bundle-a daxil olur. Vercel Function fayl sistemi müvəqqətidir; hər cold start-da fayl yenidən endirilə bilər.
+
+GitHub repository-ni Vercel-ə import edin. Multi-service import səhifəsində layihə adını `ai_dashboard` saxlaya bilərsiniz; `vercel.json` iki service-in root/build qaydalarını və public rewrites-i təyin edir. `QWEN_OPENAI_API_KEY` dəyərini yalnız Vercel-in Environment Variables UI-sinə daxil edin, chat-a və Git-ə yox.
+
+Service binding yoxdur: browser frontend-dən eyni deployment domain-indəki `/health` və `/ws` public route-larına qoşulur. Backend başqa service-i server-side çağırmır. Vercel WebSocket dəstəkləyir; connection-lar Function müddət limitinə tabedir və frontend reconnect edir. DB-ni Vercel-ə public etməyin; private object storage və məhdudlaşdırılmış download credential istifadə edin.
+
+Vercel build-dən əvvəl lokal yoxlama:
+
+```powershell
+cd frontend
+npm.cmd ci
+npm.cmd run build
+```
+
+Backend testləri:
+
+```powershell
+python -m unittest discover -s tests -v
+```
 
 ## API
 

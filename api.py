@@ -11,11 +11,13 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 
 from agentic_pipeline import run_agentic_question
+from database_runtime import ensure_database
 
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_PATH = os.getenv("DUCKDB_PATH", os.path.join(BASE_DIR, "deposit_real.duckdb"))
+DEFAULT_DATABASE_PATH = "/tmp/deposit_real.duckdb" if os.getenv("VERCEL") else os.path.join(BASE_DIR, "deposit_real.duckdb")
+DATABASE_PATH = os.getenv("DUCKDB_PATH", DEFAULT_DATABASE_PATH)
 
 app = FastAPI(title="Qwen Semantic Query WebSocket")
 allowed_origins = [
@@ -54,11 +56,16 @@ def run_question(question: str, request_id: str) -> dict:
 
 @app.get("/health")
 async def health() -> dict:
+    try:
+        await asyncio.to_thread(ensure_database, DATABASE_PATH)
+        database_available = True
+    except Exception:
+        database_available = False
     return {
         "status": "ok",
         "llm": "qwen",
         "qwen_configured": bool(os.getenv("QWEN_OPENAI_API_KEY") or os.getenv("QWEN_API_KEY")),
-        "database_available": os.path.isfile(DATABASE_PATH),
+        "database_available": database_available,
     }
 
 
