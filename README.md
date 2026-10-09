@@ -111,6 +111,17 @@ npm run build
 
 Windows PowerShell execution policy `npm` skriptini bloklayarsa, eyni əmri `npm.cmd run build` və ya `npm.cmd run dev` ilə işə salın.
 
+## Vercel deployment
+
+Vercel konfiqurasiyası bu repository-dəki React/Vite frontend-i deploy edir. Backend WebSocket və lokal DuckDB faylı istifadə etdiyinə görə onu ayrıca, persistent storage dəstəyi olan bir hostda (məsələn, Render, Railway və ya container xidməti) işlədin.
+
+1. Backend hostunda `QWEN_OPENAI_API_KEY`, `QWEN_OPENAI_API_BASE_URL`, `QWEN_OPENAI_MODEL`, `DUCKDB_PATH` və `FRONTEND_ORIGINS` dəyişənlərini təyin edin. `FRONTEND_ORIGINS`-ə Vercel production URL-ni əlavə edin.
+2. Vercel project settings-də `VITE_API_BASE_URL` dəyişənini backend-in tam `https://` URL-i ilə təyin edin. Bu dəyər client bundle-a daxil olur; burada API açarı yazmayın.
+3. GitHub repository-ni Vercel-ə import edin. Repository-dəki `vercel.json` avtomatik olaraq `frontend/` qovluğunu build edir və `frontend/dist` nəticəsini yayımlayır.
+4. Production deployment-dən sonra backend-in `FRONTEND_ORIGINS` siyahısına yaranmış Vercel domain-ini əlavə edib backend-i yenidən başladın.
+
+Vercel Functions üçün WebSocket dəstəyi platformada yeni və runtime-dan asılıdır; mövcud FastAPI WebSocket backend-i üçün ayrıca persistent backend daha etibarlı seçimdir. Vite build-də public dəyişənlər `VITE_` prefiksi ilə verilməlidir. [Vercel-in Vite sənədləri](https://vercel.com/docs/frameworks/frontend/vite) və [Python Functions sənədləri](https://vercel.com/docs/functions/runtimes/python) əlavə məlumat verir.
+
 ## API
 
 ### `GET /health`

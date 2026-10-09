@@ -6,6 +6,7 @@ import uuid
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 
@@ -17,6 +18,18 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_PATH = os.getenv("DUCKDB_PATH", os.path.join(BASE_DIR, "deposit_real.duckdb"))
 
 app = FastAPI(title="Qwen Semantic Query WebSocket")
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("FRONTEND_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173").split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 trace_logger = logging.getLogger("query_trace")
 trace_logger.setLevel(logging.INFO)
 if not trace_logger.handlers:

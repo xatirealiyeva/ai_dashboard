@@ -38,6 +38,19 @@ const samples = [
 ];
 
 const palette = ['#2f6655', '#bb6848', '#91a94a', '#566f88'];
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
+function apiUrl(path) {
+  return `${apiBaseUrl}${path}`;
+}
+
+function websocketUrl(path) {
+  const base = new URL(apiBaseUrl || window.location.origin);
+  base.protocol = base.protocol === 'https:' ? 'wss:' : 'ws:';
+  base.pathname = path;
+  base.search = '';
+  return base.toString();
+}
 
 function formatValue(value) {
   if (value === null || value === undefined) return '–';
@@ -198,14 +211,14 @@ function App() {
     let retryTimer;
     let disposed = false;
 
-    fetch('/health')
+    fetch(apiUrl('/health'))
       .then((res) => res.json())
       .then(setHealth)
       .catch(() => setHealth({ qwen_configured: false, database_available: false }));
 
     const connect = () => {
       if (disposed) return;
-      socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws`);
+      socket = new WebSocket(websocketUrl('/ws'));
       socket.onopen = () => setSocketState('connected');
       socket.onmessage = (event) => {
         setLoading(false);
