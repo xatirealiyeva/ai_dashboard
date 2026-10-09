@@ -1,0 +1,33 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node/Vite
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# Local data, logs, and editor files
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp
+*.log
+.vscode/
+.idea/

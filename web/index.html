@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6f1">
+  <title>Deposit Desk | Query Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182521;
+      --muted: #68736d;
+      --line: #dce3dc;
+      --paper: #f4f6f1;
+      --white: #fff;
+      --forest: #214f43;
+      --leaf: #d8f064;
+      --mint: #e8f0e9;
+      --coral: #b94d39;
+      --mono: "DM Mono", Consolas, monospace;
+      --sans: "DM Sans", "Segoe UI", sans-serif;
+      --serif: "Newsreader", Georgia, serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 14px;
+      min-width: 320px;
+    }
+
+    button, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .topbar {
+      min-height: 62px;
+      padding: 0 5vw;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      color: #f7faf5;
+      background: var(--ink);
+    }
+
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; }
+    .brand-mark {
+      width: 27px;
+      height: 27px;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      background: var(--leaf);
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    .brand-name { line-height: 1; }
+    .brand-name small {
+      display: block;
+      margin-top: 5px;
+      color: #aab8b0;
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 400;
+    }
+
+    .connection {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #c3cec7;
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .connection-dot { width: 8px; height: 8px; border-radius: 50%; background: #db9b50; }
+    .connection[data-state="connected"] .connection-dot { background: var(--leaf); }
+    .connection[data-state="error"] .connection-dot { background: #f47e68; }
+
+    main { width: min(1120px, 90vw); margin: 0 auto; padding: 50px 0 64px; }
+    .intro { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 31px; }
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--forest);
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; font-family: var(--serif); font-size: 46px; font-weight: 500; line-height: 1; }
+    .intro-copy { max-width: 340px; margin: 0 0 3px; color: var(--muted); line-height: 1.55; }
+
+    .health-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 23px;
+    }
+    .health-item {
+      min-height: 31px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.52);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+    .health-item strong { color: var(--ink); font-weight: 500; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(310px, .86fr) minmax(0, 1.14fr);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.56);
+      animation: appear .35s ease-out both;
+    }
+    .ask-panel, .result-panel { min-width: 0; padding: 25px 27px 29px; }
+    .ask-panel { border-right: 1px solid var(--line); }
+    .panel-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    h2 { margin: 0; font-size: 16px; font-weight: 600; }
+    .step-label { color: var(--muted); font-family: var(--mono); font-size: 10px; }
+    .samples { display: grid; gap: 7px; margin-bottom: 18px; }
+    .sample {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      background: var(--white);
+      color: var(--ink);
+      text-align: left;
+      line-height: 1.4;
+      transition: border-color .15s ease, background .15s ease, transform .15s ease;
+    }
+    .sample:hover { transform: translateY(-1px); border-color: var(--forest); background: #fbfdf9; }
+    .sample-label { display: block; margin-bottom: 4px; color: var(--forest); font-family: var(--mono); font-size: 9px; text-transform: uppercase; }
+
+    .question-label { display: block; margin: 0 0 7px; color: var(--muted); font-size: 12px; }
+    textarea {
+      width: 100%;
+      min-height: 105px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid #cbd5cc;
+      border-radius: 0;
+      outline: none;
+      background: var(--white);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    textarea:focus { border-color: var(--forest); box-shadow: 0 0 0 2px rgba(33,79,67,.12); }
+    .actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 11px; }
+    .hint { color: var(--muted); font-family: var(--mono); font-size: 10px; }
+    .send-button {
+      min-height: 39px;
+      padding: 0 15px;
+      border: 0;
+      background: var(--forest);
+      color: white;
+      font-weight: 600;
+      transition: background .15s ease;
+    }
+    .send-button:hover:not(:disabled) { background: #153b31; }
+    .send-button:disabled { cursor: wait; opacity: .55; }
+
+    .result-panel { display: flex; flex-direction: column; }
+    .result-panel .panel-heading { margin-bottom: 17px; }
+    .result-body { min-height: 235px; flex: 1; }
+    .empty-state {
+      min-height: 214px;
+      display: grid;
+      align-content: center;
+      justify-items: start;
+      padding: 20px 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .empty-mark { margin-bottom: 12px; color: var(--forest); font-family: var(--mono); font-size: 12px; }
+    .empty-state p { max-width: 260px; margin: 0; line-height: 1.5; }
+    .result-question { margin: 0 0 13px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .result-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-bottom: 13px; }
+    .metric-tag, .result-tag { padding: 5px 8px; background: var(--mint); color: var(--forest); font-family: var(--mono); font-size: 10px; }
+    .result-tag { background: #f4e5dc; color: #814331; }
+    .table-wrap { overflow: auto; border-top: 1px solid var(--ink); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    th, td { padding: 10px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { color: var(--muted); font-family: var(--mono); font-size: 9px; font-weight: 400; text-transform: uppercase; }
+    td { font-variant-numeric: tabular-nums; }
+    details { margin-top: 14px; border-top: 1px solid var(--line); }
+    summary { padding: 11px 0; color: var(--muted); cursor: pointer; font-family: var(--mono); font-size: 10px; text-transform: uppercase; }
+    pre { overflow: auto; max-height: 220px; margin: 0 0 12px; padding: 12px; background: #edf1eb; color: #34443d; font-family: var(--mono); font-size: 10px; line-height: 1.5; white-space: pre-wrap; }
+    .error-message { padding: 13px; border-left: 3px solid var(--coral); background: #fbefeb; color: #713728; line-height: 1.5; }
+    .loading { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+    .footnote { display: flex; justify-content: space-between; gap: 18px; margin-top: 15px; color: var(--muted); font-family: var(--mono); font-size: 9px; }
+
+    @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 760px) {
+      main { width: min(100% - 32px, 620px); padding-top: 35px; }
+      .topbar { padding: 0 16px; }
+      .intro { align-items: start; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+      h1 { font-size: 39px; }
+      .intro-copy { max-width: 440px; }
+      .workspace { grid-template-columns: 1fr; }
+      .ask-panel { border-right: 0; border-bottom: 1px solid var(--line); }
+      .ask-panel, .result-panel { padding: 21px 18px 24px; }
+      .result-body { min-height: 185px; }
+      .empty-state { min-height: 165px; }
+    }
+    @media (max-width: 420px) {
+      .connection { font-size: 9px; }
+      .brand-name { font-size: 12px; }
+      .hint { max-width: 125px; line-height: 1.4; }
+      .footnote { flex-direction: column; gap: 5px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">D</span>
+      <span class="brand-name">DEPOSIT DESK<small>SEMANTIC QUERY CONSOLE</small></span>
+    </div>
+    <div id="connection" class="connection" data-state="connecting" role="status">
+      <span class="connection-dot"></span><span id="connection-label">Connecting</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">Internal analytics / live query</p>
+        <h1>Ask the deposit book.</h1>
+      </div>
+      <p class="intro-copy">Ask in plain language. Qwen maps your question to an approved metric, then the semantic compiler queries the local database.</p>
+    </section>
+
+    <div class="health-strip" aria-live="polite">
+      <span class="health-item">LLM <strong id="llm-health">Checking</strong></span>
+      <span class="health-item">Database <strong id="db-health">Checking</strong></span>
+      <span class="health-item">Transport <strong id="transport-health">WebSocket</strong></span>
+    </div>
+
+    <section class="workspace" aria-label="Query workspace">
+      <div class="ask-panel">
+        <div class="panel-heading">
+          <h2>Ask a question</h2><span class="step-label">01 / INPUT</span>
+        </div>
+        <div class="samples" aria-label="Sample questions">
+          <button class="sample" type="button" data-question="Portfel balansının ümumi məbləği nə qədərdir?">
+            <span class="sample-label">Portfolio</span>
+            Portfel balansının ümumi məbləği nə qədərdir?
+          </button>
+          <button class="sample" type="button" data-question="Son 6 ayda nə qədər depozit satılıb?">
+            <span class="sample-label">Sales / last six months</span>
+            Son 6 ayda nə qədər depozit satılıb?
+          </button>
+        </div>
+        <label class="question-label" for="question">Or write your own</label>
+        <textarea id="question" maxlength="2000" placeholder="Məsələn: USD depozitlərin cari balansı nə qədərdir?" spellcheck="false"></textarea>
+        <div class="actions">
+          <span class="hint">Enter to send / Shift+Enter for a new line</span>
+          <button id="send" class="send-button" type="button" disabled>Ask Qwen</button>
+        </div>
+      </div>
+
+      <div class="result-panel">
+        <div class="panel-heading">
+          <h2>Result</h2><span class="step-label">02 / RESPONSE</span>
+        </div>
+        <div id="result" class="result-body" aria-live="polite">
+          <div class="empty-state">
+            <span class="empty-mark">READY WHEN YOU ARE</span>
+            <p>Choose a sample question or write one to see the compiled result.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div class="footnote"><span>LOCAL SERVICE / READ-ONLY DATABASE</span><span id="model-label">QWEN</span></div>
+  </main>
+
+  <script>
+    const connection = document.getElementById('connection');
+    const connectionLabel = document.getElementById('connection-label');
+    const llmHealth = document.getElementById('llm-health');
+    const dbHealth = document.getElementById('db-health');
+    const transportHealth = document.getElementById('transport-health');
+    const questionInput = document.getElementById('question');
+    const sendButton = document.getElementById('send');
+    const resultPanel = document.getElementById('result');
+    let socket;
+    let busy = false;
+    let activeQuestion = '';
+
+    function setConnection(state, label) {
+      connection.dataset.state = state;
+      connectionLabel.textContent = label;
+      transportHealth.textContent = state === 'connected' ? 'Connected' : state === 'error' ? 'Offline' : 'Connecting';
+      sendButton.disabled = state !== 'connected' || busy;
+    }
+
+    function addText(parent, tag, text, className) {
+      const element = document.createElement(tag);
+      if (className) element.className = className;
+      element.textContent = text;
+      parent.append(element);
+      return element;
+    }
+
+    function showLoading(question) {
+      resultPanel.replaceChildren();
+      addText(resultPanel, 'p', question, 'result-question');
+      addText(resultPanel, 'p', 'Qwen is interpreting the question and running the approved query…', 'loading');
+    }
+
+    function showResponse(payload) {
+      resultPanel.replaceChildren();
+      addText(resultPanel, 'p', activeQuestion, 'result-question');
+
+      if (payload.type === 'error') {
+        const message = payload.message || 'The request could not be completed.';
+        addText(resultPanel, 'div', message, 'error-message');
+        addText(resultPanel, 'p', payload.code || 'query_failed', 'step-label');
+        return;
+      }
+
+      const meta = document.createElement('div');
+      meta.className = 'result-meta';
+      const metric = payload.semantic_query && payload.semantic_query.metric;
+      if (metric) addText(meta, 'span', metric, 'metric-tag');
+      addText(meta, 'span', `${payload.rows.length} row${payload.rows.length === 1 ? '' : 's'}`, 'result-tag');
+      resultPanel.append(meta);
+
+      if (!payload.columns.length) {
+        addText(resultPanel, 'p', 'The query returned no columns.', 'loading');
+        return;
+      }
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-wrap';
+      const table = document.createElement('table');
+      const head = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      payload.columns.forEach(column => addText(headerRow, 'th', column));
+      head.append(headerRow);
+      table.append(head);
+
+      const body = document.createElement('tbody');
+      payload.rows.forEach(row => {
+        const tableRow = document.createElement('tr');
+        row.forEach(value => addText(tableRow, 'td', value === null ? 'NULL' : String(value)));
+        body.append(tableRow);
+      });
+      table.append(body);
+      wrapper.append(table);
+      resultPanel.append(wrapper);
+
+      const details = document.createElement('details');
+      addText(details, 'summary', 'Show compiled SQL');
+      addText(details, 'pre', payload.sql || '');
+      resultPanel.append(details);
+    }
+
+    function sendQuestion(value) {
+      const question = value.trim();
+      if (!question || !socket || socket.readyState !== WebSocket.OPEN || busy) return;
+      activeQuestion = question;
+      busy = true;
+      sendButton.disabled = true;
+      showLoading(question);
+      socket.send(JSON.stringify({ question }));
+    }
+
+    async function loadHealth() {
+      try {
+        const response = await fetch('/health');
+        const health = await response.json();
+        llmHealth.textContent = health.qwen_configured ? 'Qwen ready' : 'Key missing';
+        dbHealth.textContent = health.database_available ? 'Available' : 'Unavailable';
+        if (!health.qwen_configured) llmHealth.title = 'Set QWEN_OPENAI_API_KEY in .env and restart the service.';
+        document.getElementById('model-label').textContent = `MODEL / ${health.llm.toUpperCase()}`;
+      } catch {
+        llmHealth.textContent = 'Unavailable';
+        dbHealth.textContent = 'Unavailable';
+      }
+    }
+
+    function connect() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      socket = new WebSocket(`${protocol}//${location.host}/ws`);
+      setConnection('connecting', 'Connecting');
+      socket.addEventListener('open', () => setConnection('connected', 'Connected'));
+      socket.addEventListener('message', event => {
+        busy = false;
+        sendButton.disabled = socket.readyState !== WebSocket.OPEN;
+        try {
+          showResponse(JSON.parse(event.data));
+        } catch {
+          showResponse({ type: 'error', code: 'invalid_response', message: 'The service returned invalid JSON.' });
+        }
+      });
+      socket.addEventListener('error', () => setConnection('error', 'Connection error'));
+      socket.addEventListener('close', () => {
+        busy = false;
+        setConnection('error', 'Disconnected');
+      });
+    }
+
+    sendButton.addEventListener('click', () => sendQuestion(questionInput.value));
+    questionInput.addEventListener('input', () => {
+      sendButton.disabled = !socket || socket.readyState !== WebSocket.OPEN || busy;
+    });
+    questionInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendQuestion(questionInput.value);
+      }
+    });
+    document.querySelectorAll('[data-question]').forEach(button => {
+      button.addEventListener('click', () => {
+        const question = button.dataset.question;
+        questionInput.value = question;
+        sendQuestion(question);
+      });
+    });
+
+    loadHealth();
+    connect();
+  </script>
+</body>
+</html>

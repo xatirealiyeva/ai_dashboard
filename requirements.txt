@@ -1,0 +1,9 @@
+duckdb
+fastapi
+fastembed
+json-repair
+anthropic
+openai
+python-dotenv
+PyYAML
+uvicorn[standard]
