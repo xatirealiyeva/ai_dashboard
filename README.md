@@ -113,12 +113,16 @@ Windows PowerShell execution policy `npm` skriptini bloklayarsa, eyni əmri `npm
 
 ## Vercel deployment
 
-Vercel konfiqurasiyası bu repository-dəki React/Vite frontend-i deploy edir. Backend WebSocket və lokal DuckDB faylı istifadə etdiyinə görə onu ayrıca, persistent storage dəstəyi olan bir hostda (məsələn, Render, Railway və ya container xidməti) işlədin.
+Vercel konfiqurasiyası bu repository-dəki React/Vite frontend-i deploy edir. Backend üçün Render Blueprint-i (`render.yaml`) də əlavə olunub. Free Render planında persistent disk yoxdur, buna görə `render_bootstrap.py` DuckDB snapshot-ını Render Secret File-dan hər açılışda `/tmp` qovluğuna bərpa edir.
 
-1. Backend hostunda `QWEN_OPENAI_API_KEY`, `QWEN_OPENAI_API_BASE_URL`, `QWEN_OPENAI_MODEL`, `DUCKDB_PATH` və `FRONTEND_ORIGINS` dəyişənlərini təyin edin. `FRONTEND_ORIGINS`-ə Vercel production URL-ni əlavə edin.
-2. Vercel project settings-də `VITE_API_BASE_URL` dəyişənini backend-in tam `https://` URL-i ilə təyin edin. Bu dəyər client bundle-a daxil olur; burada API açarı yazmayın.
-3. GitHub repository-ni Vercel-ə import edin. Repository-dəki `vercel.json` avtomatik olaraq `frontend/` qovluğunu build edir və `frontend/dist` nəticəsini yayımlayır.
-4. Production deployment-dən sonra backend-in `FRONTEND_ORIGINS` siyahısına yaranmış Vercel domain-ini əlavə edib backend-i yenidən başladın.
+1. Lokal olaraq `python scripts/create_render_db_secret.py` əmri ilə `deposit_real.duckdb.gz.b64` faylını yaradın. Bu fayl `.gitignore`-dadır və GitHub-a göndərilmir.
+2. Render Dashboard-da **New + → Blueprint** seçin və GitHub repository-ni qoşun. `render.yaml` free FastAPI service-i yaradır.
+3. Render service-in **Environment → Secret Files** bölməsində `deposit_real.duckdb.gz.b64` adlı secret file yaradın; lokal yaradılmış faylın məzmununu ora yapışdırın. Secret file 1 MB limitindən kiçik olmalıdır.
+4. Render-in istədiyi `QWEN_OPENAI_API_KEY`, `QWEN_OPENAI_API_BASE_URL`, `QWEN_OPENAI_MODEL` və `FRONTEND_ORIGINS` dəyişənlərini daxil edin. `FRONTEND_ORIGINS`-ə Vercel production URL-ni əlavə edin.
+5. Service deploy bitdikdən sonra onun `https://...onrender.com` URL-ni kopyalayın.
+6. Vercel project settings-də `VITE_API_BASE_URL` dəyişənini həmin Render URL-i ilə təyin edin. Bu dəyər client bundle-a daxil olur; burada API açarı yazmayın.
+7. GitHub repository-ni Vercel-ə import edin. Repository-dəki `vercel.json` avtomatik olaraq `frontend/` qovluğunu build edir və `frontend/dist` nəticəsini yayımlayır.
+8. Vercel production URL yarandıqdan sonra onu backend-in `FRONTEND_ORIGINS` dəyərinə əlavə edib Render service-i redeploy edin.
 
 Vercel Functions üçün WebSocket dəstəyi platformada yeni və runtime-dan asılıdır; mövcud FastAPI WebSocket backend-i üçün ayrıca persistent backend daha etibarlı seçimdir. Vite build-də public dəyişənlər `VITE_` prefiksi ilə verilməlidir. [Vercel-in Vite sənədləri](https://vercel.com/docs/frameworks/frontend/vite) və [Python Functions sənədləri](https://vercel.com/docs/functions/runtimes/python) əlavə məlumat verir.
 

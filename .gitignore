@@ -26,6 +26,7 @@ frontend/dist/
 
 # Local data, logs, and editor files
 *.duckdb
+*.duckdb.gz.b64
 *.duckdb.wal
 *.duckdb.tmp
 *.log

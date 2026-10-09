@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: ai-dashboard-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python render_bootstrap.py
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.11
+      - key: DUCKDB_PATH
+        value: /tmp/deposit_real.duckdb
+      - key: DUCKDB_SECRET_FILE
+        value: /etc/secrets/deposit_real.duckdb.gz.b64
+      - key: QWEN_OPENAI_API_KEY
+        sync: false
+      - key: QWEN_OPENAI_API_BASE_URL
+        sync: false
+      - key: QWEN_OPENAI_MODEL
+        sync: false
+      - key: FRONTEND_ORIGINS
+        sync: false
